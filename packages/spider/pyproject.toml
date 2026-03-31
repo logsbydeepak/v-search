@@ -1,0 +1,10 @@
+[project]
+name = "spider"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "libsql>=0.1.11",
+    "redis>=7.4.0",
+]

@@ -1,5 +1,5 @@
 from bs4 import BeautifulSoup
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urljoin, urldefrag
 from urllib.robotparser import RobotFileParser
 import requests
 import re
@@ -50,9 +50,13 @@ def spider(dbC, url):
     title = get_title(soup)
     description = get_description(soup)
     body = get_body(soup)
+    links = extract_links(soup, url)
 
     page = db.Page(url=url, title=title, description=description, content=body)
     db.store_page(dbC, page)
+
+    for link in links:
+        db.store_page_link(dbC, url, link)
 
     print(f"Title: {title}")
     print(f"Description: {description}")
@@ -125,3 +129,21 @@ def get_body(soup):
     text = re.sub(r"\s+", " ", text)
 
     return text
+
+
+def extract_links(soup, base_url):
+    links = set()
+
+    for a_tag in soup.find_all("a", href=True):
+        href = a_tag["href"].strip()
+
+        if href.startswith(("javascript:", "mailto:", "tel:")):
+            continue
+
+        full_url = urljoin(base_url, href)
+        full_url, _ = urldefrag(full_url)  # remove #fragment
+
+        if full_url.startswith(("http://", "https://")):
+            links.add(full_url)
+
+    return list(links)

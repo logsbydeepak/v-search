@@ -1,0 +1,94 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sora: "Sora", sans-serif;
+  --font-dm: "DM Sans", sans-serif;
+  --animate-fade-up: fadeUp 0.55s cubic-bezier(0.4, 0, 0.2, 1) both;
+  --animate-fade-in: fadeIn 0.4s ease both;
+  --animate-result-slide: resultSlide 0.28s cubic-bezier(0.4, 0, 0.2, 1) both;
+  --animate-shimmer: shimmer 1.4s infinite linear;
+}
+
+:root {
+  --accent: oklch(0.62 0.2 32);
+  --accent-soft: oklch(0.62 0.2 32 / 0.12);
+  --accent-glow: oklch(0.62 0.2 32 / 0.25);
+}
+
+.dark {
+  --accent: oklch(0.7 0.2 32);
+  --accent-soft: oklch(0.7 0.2 32 / 0.15);
+  --accent-glow: oklch(0.7 0.2 32 / 0.3);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "DM Sans", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--accent-soft);
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgb(0 0 0 / 0.12);
+  border-radius: 3px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgb(255 255 255 / 0.1);
+}
+
+.delay-1 { animation-delay: 0.08s; }
+.delay-2 { animation-delay: 0.16s; }
+.delay-3 { animation-delay: 0.24s; }
+.r0 { animation-delay: 0s; }
+.r1 { animation-delay: 0.05s; }
+.r2 { animation-delay: 0.1s; }
+.r3 { animation-delay: 0.15s; }
+.r4 { animation-delay: 0.2s; }
+.r5 { animation-delay: 0.25s; }
+.r6 { animation-delay: 0.3s; }
+.r7 { animation-delay: 0.35s; }
+.d300 { animation-delay: 0.3s; }
+.d400 { animation-delay: 0.4s; }
+
+.shimmer-bg {
+  background: linear-gradient(90deg, #e2ddd7 25%, #d4cec8 50%, #e2ddd7 75%);
+  background-size: 600px 100%;
+}
+
+.dark .shimmer-bg {
+  background: linear-gradient(90deg, #1e1c18 25%, #2a2720 50%, #1e1c18 75%);
+  background-size: 600px 100%;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes resultSlide {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -600px 0; }
+  100% { background-position: 600px 0; }
+}

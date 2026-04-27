@@ -1,0 +1,19 @@
+---
+const { size = "lg" } = Astro.props;
+const sizes = {
+  lg: { logo: 44, text: "text-[34px]", gap: "gap-3" },
+  md: { logo: 30, text: "text-[22px]", gap: "gap-2" },
+  sm: { logo: 24, text: "text-[17px]", gap: "gap-2" },
+};
+const cfg = sizes[size] ?? sizes.lg;
+const stroke = cfg.logo * 0.072;
+---
+
+<div class={`flex items-center ${cfg.gap} select-none`}>
+  <svg width={cfg.logo} height={cfg.logo} viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <circle cx="21" cy="21" r="13" stroke="var(--accent)" stroke-width={stroke}></circle>
+    <line x1="30.2" y1="30.2" x2="39" y2="39" stroke="var(--accent)" stroke-width={stroke} stroke-linecap="round"></line>
+    <polyline points="23,11 18,22 22.5,22 19,31 26,20 21.5,20 23,11" stroke="var(--accent)" stroke-width={stroke * 0.85} stroke-linejoin="round" stroke-linecap="round" fill="none"></polyline>
+  </svg>
+  <span class={`font-sora ${cfg.text} font-bold leading-none tracking-normal text-[#141210] dark:text-[#f0ede8]`}>quickly</span>
+</div>

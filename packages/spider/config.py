@@ -13,6 +13,8 @@ def init_db():
         raise Exception("Missing DB_URL")
 
     conn = psycopg.connect(url)
+    conn.execute(db.init_query)
+    conn.commit()
 
     return conn
 

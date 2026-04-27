@@ -3,14 +3,37 @@ from urllib.parse import urlparse
 from urllib.robotparser import RobotFileParser
 import requests
 import re
+import db
 
 headers = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36"
 }
 
 
-def spider(url):
-    robots_txt = fetch_robots_txt(url)
+def spider(dbC, url):
+    db_page = db.retrieve_page(dbC, url)
+    if db_page:
+        print(f"Found cached page for {url}")
+        print(f"Title: {db_page.title}")
+        print(f"Description: {db_page.description}")
+        print(f"Body: {db_page.content}")
+        return
+
+    robots_txt = None
+
+    p = urlparse(url)
+    robots_url = f"{p.scheme}://{p.netloc}/robots.txt"
+
+    db_res = db.retrieve_robot(dbC, robots_url)
+    if db_res:
+        print(f"Found cached robots.txt for {url}")
+        robots_txt = db_res
+    else:
+        print(f"Fetching robots.txt for {url}")
+        robots_txt = fetch(robots_url)
+        if robots_txt:
+            db.store_robot(dbC, robots_url, robots_txt)
+
     if robots_txt is None:
         print(f"Could not fetch robots.txt for {url}")
         return
@@ -24,13 +47,12 @@ def spider(url):
         print(f"Failed to crawl {url}")
         return
 
-    print(
-        soup.prettify()[:500]
-    )  # Print the first 500 characters of the prettified HTML
-
     title = get_title(soup)
     description = get_description(soup)
     body = get_body(soup)
+
+    page = db.Page(url=url, title=title, description=description, content=body)
+    db.store_page(dbC, page)
 
     print(f"Title: {title}")
     print(f"Description: {description}")

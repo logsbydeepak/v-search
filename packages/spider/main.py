@@ -3,8 +3,8 @@ import spider
 
 
 def main():
-    config.init_db()
-    spider.spider("https://pypi.org/project/beautifulsoup4/")
+    db = config.init_db()
+    spider.spider(db, "https://pypi.org/project/beautifulsoup4/")
 
     # config.init_redis()
 

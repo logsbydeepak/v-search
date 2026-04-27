@@ -31,7 +31,7 @@ def main():
     conn = config.init_db()
 
     # results = search(conn, "python")
-    results = search(conn, "python")
+    results = search(conn, "js")
     for row in results:
         print(row)
 

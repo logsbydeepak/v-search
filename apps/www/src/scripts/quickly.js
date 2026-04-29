@@ -1,18 +1,6 @@
 import { generate } from "random-words";
 
 const STORAGE_KEY = "quickly-theme";
-const SUGGESTIONS = [
-  "quickly search engine",
-  "quickly find files",
-  "quick sort algorithm",
-  "quickly meaning",
-  "quicken loans",
-  "quick recipes",
-  "quickly synonym",
-  "quick maths",
-  "quickly adverb",
-  "quick draw",
-];
 const CHIPS = ["Trending", "News", "Sports", "Finance", "Technology", "Science"];
 const API_URL = window.QUICKLY_API_URL || "http://localhost:5000";
 
@@ -47,37 +35,19 @@ function randomWord() {
   return CHIPS[Math.floor(Math.random() * CHIPS.length)];
 }
 
-function renderSuggestions(input, list, onSubmit) {
-  const value = input.value.toLowerCase();
-  const matches =
-    value.length > 1 ? SUGGESTIONS.filter((item) => item.startsWith(value)).slice(0, 6) : [];
+function hideSuggestions(form) {
+  const list = form.querySelector("[data-suggestions]");
+  if (!list) return;
   list.innerHTML = "";
-  list.classList.toggle("hidden", matches.length === 0 || document.activeElement !== input);
-  input
-    .closest("[data-search-shell]")
-    ?.classList.toggle("is-open", matches.length > 0 && document.activeElement === input);
-
-  matches.forEach((suggestion) => {
-    const item = document.createElement("button");
-    item.type = "button";
-    item.className =
-      "flex w-full items-center gap-3 px-5 py-2.5 text-left text-sm text-[#4a4540] transition-colors duration-100 hover:bg-[var(--accent-soft)] dark:text-[#b8b0a5]";
-    item.innerHTML = `<svg width="14" height="14" viewBox="0 0 20 20" fill="none" class="shrink-0 opacity-35"><circle cx="8.5" cy="8.5" r="5.5" stroke="currentColor" stroke-width="1.8"></circle><path d="M13 13L17 17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg><span><strong class="font-medium text-[#141210] dark:text-[#f0ede8]">${suggestion.slice(0, input.value.length)}</strong>${suggestion.slice(input.value.length)}</span>`;
-    item.addEventListener("mousedown", (event) => {
-      event.preventDefault();
-      input.value = suggestion;
-      onSubmit(suggestion);
-    });
-    list.append(item);
-  });
+  list.classList.add("hidden");
+  form.querySelector("[data-search-shell]")?.classList.remove("is-open");
 }
 
 function initSearchBars() {
   document.querySelectorAll("[data-search-form]").forEach((form) => {
     const input = form.querySelector("[data-search-input]");
-    const list = form.querySelector("[data-suggestions]");
     const clear = form.querySelector("[data-clear-search]");
-    if (!input || !list) return;
+    if (!input) return;
 
     const onSubmit = (query) => {
       if (query.trim()) window.location.href = targetFor(query);
@@ -89,16 +59,14 @@ function initSearchBars() {
     });
     input.addEventListener("input", () => {
       clear?.classList.toggle("hidden", !input.value);
-      renderSuggestions(input, list, onSubmit);
+      hideSuggestions(form);
     });
-    input.addEventListener("focus", () => renderSuggestions(input, list, onSubmit));
-    input.addEventListener("blur", () =>
-      setTimeout(() => renderSuggestions(input, list, onSubmit), 150),
-    );
+    input.addEventListener("focus", () => hideSuggestions(form));
+    input.addEventListener("blur", () => hideSuggestions(form));
     clear?.addEventListener("click", () => {
       input.value = "";
       clear.classList.add("hidden");
-      renderSuggestions(input, list, onSubmit);
+      hideSuggestions(form);
       input.focus();
     });
   });

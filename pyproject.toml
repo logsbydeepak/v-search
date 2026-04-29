@@ -14,3 +14,7 @@ members = [
   "packages/tkz",
   "packages/db",
 ]
+
+[project.scripts]
+app = "apps.api:app"
+

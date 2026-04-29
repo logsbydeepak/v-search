@@ -42,4 +42,3 @@ DROP TABLE IF EXISTS quickly_page_link CASCADE;
 DROP TABLE IF EXISTS quickly_robot CASCADE;
 DROP TABLE IF EXISTS quickly_page CASCADE;
 """
-

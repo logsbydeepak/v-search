@@ -3,8 +3,86 @@ import "../styles/global.css";
 import Logo from "../components/Logo.astro";
 import ThemeHead from "../components/ThemeHead.astro";
 
-const tabs = ["All", "Images", "News", "Videos", "Maps", "More"];
+export const prerender = false;
+
 const apiUrl = import.meta.env.PUBLIC_API_URL ?? "http://127.0.0.1:5000";
+const query = Astro.url.searchParams.get("q") || "Trending";
+const page = Math.max(Number.parseInt(Astro.url.searchParams.get("page") || "1", 10) || 1, 1);
+
+const emptyPayload = {
+  results: [],
+  meta: {
+    search_speed_ms: 0,
+    total_results: 0,
+  },
+  pagination: {
+    page,
+    page_size: 10,
+    total_pages: 0,
+    has_next: false,
+    has_previous: false,
+  },
+};
+
+let payload = emptyPayload;
+let searchError = false;
+
+try {
+  const searchUrl = new URL("/search", apiUrl);
+  searchUrl.searchParams.set("q", query);
+  searchUrl.searchParams.set("page", String(page));
+  const response = await fetch(searchUrl);
+  if (!response.ok) throw new Error(`Search failed with ${response.status}`);
+  payload = await response.json();
+} catch (error) {
+  searchError = true;
+  console.error(error);
+}
+
+const results = payload.results || [];
+const pagination = payload.pagination || emptyPayload.pagination;
+const totalResults = payload.meta?.total_results ?? results.length;
+const speedSeconds = ((payload.meta?.search_speed_ms ?? 0) / 1000).toFixed(2);
+const currentPage = pagination.page || page;
+const totalPages = pagination.total_pages || 1;
+const relatedSearches = [
+  `${query} explained`,
+  `${query} examples`,
+  `${query} tutorial`,
+  `best ${query}`,
+  `${query} history`,
+  `how to use ${query}`,
+];
+
+const targetFor = (item: string, pageNumber = 1) => {
+  const params = new URLSearchParams({ q: item.trim() });
+  if (pageNumber > 1) params.set("page", String(pageNumber));
+  return `/search?${params.toString()}`;
+};
+
+const displayUrl = (value: string) => {
+  try {
+    const parsed = new URL(value);
+    return `${parsed.hostname}${parsed.pathname === "/" ? "" : parsed.pathname}`;
+  } catch {
+    return value || "";
+  }
+};
+
+const resultDomain = (value: string) => {
+  try {
+    return new URL(value).hostname;
+  } catch {
+    return (value || "").split("/")[0];
+  }
+};
+
+const paginationStart = Math.max(1, currentPage - 3);
+const paginationEnd = Math.min(totalPages, paginationStart + 6);
+const paginationPages = Array.from(
+  { length: Math.max(0, paginationEnd - paginationStart + 1) },
+  (_, index) => paginationStart + index,
+);
 ---
 
 <!doctype html>
@@ -19,17 +97,18 @@ const apiUrl = import.meta.env.PUBLIC_API_URL ?? "http://127.0.0.1:5000";
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
     <ThemeHead />
-    <title>Quickly - Search Results</title>
+    <title>{query} - Quickly</title>
+    <meta name="description" content={`Search results for ${query} on Quickly.`} />
   </head>
   <body class="min-h-screen bg-[#f5f2ee] text-[#141210] transition-colors duration-200 dark:bg-[#0f0e0c] dark:text-[#f0ede8]">
-    <div data-results-page class="flex min-h-screen flex-col bg-[#f5f2ee] dark:bg-[#0f0e0c]">
+    <div data-results-page data-server-rendered class="flex min-h-screen flex-col bg-[#f5f2ee] dark:bg-[#0f0e0c]">
       <header class="sticky top-0 z-50 flex items-center gap-4 border-b border-black/[0.07] bg-[#f5f2ee]/90 px-6 py-3 backdrop-blur-md dark:border-white/[0.06] dark:bg-[#0f0e0c]/90">
         <a href="/" class="shrink-0"><Logo size="sm" /></a>
         <form data-search-form class="max-w-[600px] flex-1">
           <div data-search-shell class="relative w-full">
             <div class="flex h-11 items-center gap-2.5 rounded-[22px] border-[1.5px] border-black/[0.09] bg-white/70 px-4 shadow-sm backdrop-blur-md transition-all duration-150 focus-within:border-[var(--accent)] focus-within:shadow-[0_0_0_3px_var(--accent-glow),0_4px_16px_rgba(0,0,0,0.08)] dark:border-white/[0.08] dark:bg-[#1e1c18]/85">
               <svg width="16" height="16" viewBox="0 0 20 20" fill="none" class="shrink-0 opacity-40"><circle cx="8.5" cy="8.5" r="5.5" stroke="currentColor" stroke-width="1.8"></circle><path d="M13 13L17 17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg>
-              <input data-search-input type="text" placeholder="Search the web, fast." class="flex-1 border-none bg-transparent font-dm text-sm text-[#141210] caret-[var(--accent)] outline-none placeholder:text-[#8a837a] dark:text-[#f0ede8] dark:placeholder:text-[#6e6760]" />
+              <input data-search-input type="text" value={query} placeholder="Search the web, fast." class="flex-1 border-none bg-transparent font-dm text-sm text-[#141210] caret-[var(--accent)] outline-none placeholder:text-[#8a837a] dark:text-[#f0ede8] dark:placeholder:text-[#6e6760]" />
               <button data-clear-search type="button" class="rounded-full p-1 text-[#8a837a] transition-colors duration-150 hover:text-[#141210] dark:hover:text-[#f0ede8]"><svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 2L12 12M12 2L2 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg></button>
               <div class="h-5 w-px shrink-0 bg-black/10 dark:bg-white/10"></div>
               <button type="submit" class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--accent)] transition-all duration-100 hover:opacity-85 active:scale-95"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="4.5" stroke="white" stroke-width="1.8"></circle><path d="M10.5 10.5L14 14" stroke="white" stroke-width="1.8" stroke-linecap="round"></path></svg></button>
@@ -48,15 +127,13 @@ const apiUrl = import.meta.env.PUBLIC_API_URL ?? "http://127.0.0.1:5000";
 
       <main class="mx-auto flex w-full max-w-[1100px] flex-1 gap-10 px-6 pb-12 pt-5">
         <section class="min-w-0 flex-1">
-          <div class="mb-5 flex items-center gap-0.5 border-b border-black/[0.07] dark:border-white/[0.06]">
+          <!-- <div class="mb-5 flex items-center gap-0.5 border-b border-black/[0.07] dark:border-white/[0.06]">
             {tabs.map((tab, index) => <button class={`-mb-px border-b-2 px-3.5 py-2.5 font-dm text-[14px] transition-colors duration-150 ${index === 0 ? "border-[var(--accent)] font-medium text-[var(--accent)]" : "border-transparent text-[#8a837a] hover:text-[#4a4540] dark:text-[#6e6760] dark:hover:text-[#b8b0a5]"}`}>{tab}</button>)}
             <button class="ml-auto flex items-center gap-1.5 rounded-full border-[1.5px] border-black/[0.09] px-3 py-1 font-dm text-[13px] text-[#8a837a] transition-colors duration-150 hover:border-black/20 dark:border-white/[0.08] dark:text-[#6e6760] dark:hover:border-white/20">
               <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><path d="M1 2h14v2L9 10v6l-2-1V10L1 4V2z"></path></svg>
               Tools
             </button>
-          </div>
-
-          <p data-stats class="mb-5 text-[13px] font-light text-[#8a837a] dark:text-[#6e6760]"></p>
+          </div> -->
 
           <!-- <div class="mb-5 animate-result-slide r0 rounded-xl border-[1.5px] border-l-[3px] border-black/[0.09] border-l-[var(--accent)] bg-white/70 p-5 backdrop-blur-sm dark:border-white/[0.08] dark:bg-[#1e1c18]/70">
             <div class="mb-2.5 flex items-center gap-2">
@@ -68,18 +145,56 @@ const apiUrl = import.meta.env.PUBLIC_API_URL ?? "http://127.0.0.1:5000";
             <button data-ai-toggle class="mt-1.5 text-[13px] font-medium text-[var(--accent)] transition-opacity hover:opacity-70">Show more</button>
           </div> -->
 
-          <div data-results-list></div>
+          <p class="mb-5 text-[13px] font-light text-[#8a837a] dark:text-[#6e6760]">
+            {searchError ? "Search failed." : <>Page {currentPage} of {totalPages}</>}
+          </p>
 
-          <div data-pagination class="mt-10 flex flex-wrap items-center justify-center gap-1.5"></div>
+          <div data-results-list>
+            {searchError ? (
+              <div class="rounded-xl border-[1.5px] border-red-500/30 bg-white/70 p-5 font-dm text-[13.5px] text-[#4a4540] backdrop-blur-sm dark:bg-[#1e1c18]/70 dark:text-[#b8b0a5]">Could not load results from the API.</div>
+            ) : results.length ? (
+              results.map((item, index) => {
+                const url = item.url || "";
+                const featured = index === 0;
+                return (
+                  <article class={`group animate-result-slide r${index} transition-all duration-150 ${featured ? "mb-1 rounded-xl border-[1.5px] border-black/[0.09] bg-white/70 p-5 shadow-sm backdrop-blur-sm hover:border-[var(--accent)] hover:bg-[var(--accent-soft)] dark:border-white/[0.08] dark:bg-[#1e1c18]/70" : "border-b border-black/[0.07] py-3.5 dark:border-white/[0.06]"}`}>
+                    <a href={url} class="block" target="_blank" rel="noreferrer">
+                      <div class="mb-1.5 flex flex-wrap items-center gap-2">
+                        <img src={`https://www.google.com/s2/favicons?domain=${resultDomain(url)}&sz=32`} width="15" height="15" class="shrink-0 rounded-[3px]" alt="" />
+                        <span class="max-w-[320px] truncate text-[13px] font-light text-[#8a837a] dark:text-[#6e6760]">{displayUrl(url)}</span>
+                        {featured && <span class="shrink-0 rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-[var(--accent)]">Top pick</span>}
+                      </div>
+                      <h3 class="mb-1.5 font-dm text-[17px] font-medium leading-snug text-[oklch(0.48_0.18_245)] transition-colors duration-150 group-hover:text-[var(--accent)] group-hover:underline group-hover:underline-offset-2 dark:text-[oklch(0.70_0.16_245)]">{item.title || url || "Untitled result"}</h3>
+                      <p class="max-w-[680px] text-[13.5px] font-light leading-relaxed text-[#4a4540] dark:text-[#b8b0a5]">{item.description || ""}</p>
+                    </a>
+                  </article>
+                );
+              })
+            ) : (
+              <div class="rounded-xl border-[1.5px] border-black/[0.09] bg-white/70 p-5 font-dm text-[13.5px] text-[#4a4540] backdrop-blur-sm dark:border-white/[0.08] dark:bg-[#1e1c18]/70 dark:text-[#b8b0a5]">No results found.</div>
+            )}
+          </div>
+
+          <div data-pagination class="mt-10 flex flex-wrap items-center justify-center gap-1.5">
+            {totalPages > 1 && (
+              <>
+                {pagination.has_previous ? <a href={targetFor(query, currentPage - 1)} class="rounded-lg border-[1.5px] border-black/[0.09] px-4 py-2 font-dm text-[13px] text-[#4a4540] transition-colors duration-150 hover:border-black/20 dark:border-white/[0.08] dark:text-[#b8b0a5] dark:hover:border-white/20">Prev</a> : <span class="rounded-lg border-[1.5px] border-black/[0.09] px-4 py-2 font-dm text-[13px] text-[#4a4540] opacity-35 dark:border-white/[0.08] dark:text-[#b8b0a5]">Prev</span>}
+                {paginationPages.map((pageNumber) => pageNumber === currentPage ? <span class="flex h-9 w-9 items-center justify-center rounded-lg border-[1.5px] border-[var(--accent)] bg-[var(--accent)] font-dm text-[13px] font-semibold text-white">{pageNumber}</span> : <a href={targetFor(query, pageNumber)} class="flex h-9 w-9 items-center justify-center rounded-lg border-[1.5px] border-black/[0.09] font-dm text-[13px] text-[#4a4540] transition-all duration-150 hover:border-black/20 dark:border-white/[0.08] dark:text-[#b8b0a5] dark:hover:border-white/20">{pageNumber}</a>)}
+                {pagination.has_next ? <a href={targetFor(query, currentPage + 1)} class="rounded-lg border-[1.5px] border-black/[0.09] px-4 py-2 font-dm text-[13px] text-[#4a4540] transition-colors duration-150 hover:border-black/20 dark:border-white/[0.08] dark:text-[#b8b0a5] dark:hover:border-white/20">Next</a> : <span class="rounded-lg border-[1.5px] border-black/[0.09] px-4 py-2 font-dm text-[13px] text-[#4a4540] opacity-35 dark:border-white/[0.08] dark:text-[#b8b0a5]">Next</span>}
+              </>
+            )}
+          </div>
 
           <div class="mt-8 border-t border-black/[0.07] pt-5 dark:border-white/[0.06]">
             <h4 class="mb-3.5 text-[11px] font-semibold uppercase tracking-widest text-[#8a837a] dark:text-[#6e6760]">Related searches</h4>
-            <div data-related class="flex flex-wrap gap-2"></div>
+            <div data-related class="flex flex-wrap gap-2">
+              {relatedSearches.map((item) => <a href={targetFor(item)} class="rounded-full border-[1.5px] border-black/[0.09] bg-white/50 px-3.5 py-1.5 font-dm text-[13px] text-[#4a4540] transition-all duration-150 hover:border-[var(--accent)] hover:text-[var(--accent)] dark:border-white/[0.08] dark:bg-[#1e1c18]/50 dark:text-[#b8b0a5]">{item}</a>)}
+            </div>
           </div>
         </section>
 
         <aside class="hidden w-[272px] shrink-0 flex-col gap-4 pt-1 md:flex">
-          <div class="animate-fade-in d300 rounded-2xl border-[1.5px] border-black/[0.09] bg-white/70 p-5 shadow-sm backdrop-blur-sm dark:border-white/[0.08] dark:bg-[#1e1c18]/70">
+          <!-- <div class="animate-fade-in d300 rounded-2xl border-[1.5px] border-black/[0.09] bg-white/70 p-5 shadow-sm backdrop-blur-sm dark:border-white/[0.08] dark:bg-[#1e1c18]/70">
             <div class="mb-4 flex h-36 w-full items-center justify-center rounded-xl bg-[repeating-linear-gradient(45deg,#e2ddd7_0,#e2ddd7_10px,#d4cec8_10px,#d4cec8_20px)] dark:bg-[repeating-linear-gradient(45deg,#1e1c18_0,#1e1c18_10px,#2a2720_10px,#2a2720_20px)]">
               <span data-panel-image class="px-2 text-center font-mono text-[11px] leading-relaxed text-[#8a837a] dark:text-[#6e6760]"></span>
             </div>
@@ -89,13 +204,13 @@ const apiUrl = import.meta.env.PUBLIC_API_URL ?? "http://127.0.0.1:5000";
               <div class="flex justify-between text-[12px]"><span class="text-[#8a837a] dark:text-[#6e6760]">Category</span><span class="font-medium text-[#4a4540] dark:text-[#b8b0a5]">General knowledge</span></div>
               <div class="flex justify-between text-[12px]"><span class="text-[#8a837a] dark:text-[#6e6760]">Updated</span><span class="font-medium text-[#4a4540] dark:text-[#b8b0a5]">April 2026</span></div>
             </div>
-          </div>
+          </div> -->
 
           <div class="animate-fade-in d400 rounded-2xl border-[1.5px] border-black/[0.09] bg-white/70 p-5 shadow-sm backdrop-blur-sm dark:border-white/[0.08] dark:bg-[#1e1c18]/70">
             <h4 class="mb-3 text-[11px] font-semibold uppercase tracking-widest text-[#8a837a] dark:text-[#6e6760]">Quick Facts</h4>
             <div class="flex flex-col gap-2.5">
-              <div class="flex items-center justify-between"><span class="text-[12px] text-[#8a837a] dark:text-[#6e6760]">Search speed</span><span data-speed class="font-sora text-[13px] font-semibold text-[var(--accent)]"></span></div>
-              <div class="flex items-center justify-between"><span class="text-[12px] text-[#8a837a] dark:text-[#6e6760]">Results found</span><span data-found class="font-sora text-[13px] font-semibold text-[var(--accent)]"></span></div>
+              <div class="flex items-center justify-between"><span class="text-[12px] text-[#8a837a] dark:text-[#6e6760]">Search speed</span><span data-speed class="font-sora text-[13px] font-semibold text-[var(--accent)]">{speedSeconds}s</span></div>
+              <div class="flex items-center justify-between"><span class="text-[12px] text-[#8a837a] dark:text-[#6e6760]">Results found</span><span data-found class="font-sora text-[13px] font-semibold text-[var(--accent)]">{totalResults.toLocaleString()}</span></div>
               <div class="flex items-center justify-between"><span class="text-[12px] text-[#8a837a] dark:text-[#6e6760]">Index date</span><span class="font-sora text-[13px] font-semibold text-[var(--accent)]">Apr 27, 2026</span></div>
             </div>
           </div>

@@ -44,7 +44,7 @@ function initTheme() {
 function targetFor(query, page = 1) {
   const params = new URLSearchParams({ q: query.trim() });
   if (page > 1) params.set("page", page);
-  return `/results?${params.toString()}`;
+  return `/search?${params.toString()}`;
 }
 
 function randomWord() {
@@ -266,9 +266,13 @@ async function initResultsPage() {
 
   document.title = `${query} - Quickly`;
   root.querySelector("[data-search-input]").value = query;
+  if (root.hasAttribute("data-server-rendered")) return;
+
   root.querySelector("[data-stats]").textContent = "Searching...";
-  root.querySelector("[data-panel-title]").textContent = cap(query);
-  root.querySelector("[data-panel-image]").innerHTML = `image placeholder<br>${query}`;
+  const panelTitle = root.querySelector("[data-panel-title]");
+  const panelImage = root.querySelector("[data-panel-image]");
+  if (panelTitle) panelTitle.textContent = cap(query);
+  if (panelImage) panelImage.innerHTML = `image placeholder<br>${query}`;
   root.querySelector("[data-speed]").textContent = "--";
   root.querySelector("[data-found]").textContent = "--";
   root.querySelector("[data-results-list]").innerHTML =

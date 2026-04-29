@@ -4,6 +4,7 @@ import Logo from "../components/Logo.astro";
 import ThemeHead from "../components/ThemeHead.astro";
 
 const tabs = ["All", "Images", "News", "Videos", "Maps", "More"];
+const apiUrl = import.meta.env.PUBLIC_API_URL ?? "http://127.0.0.1:5000";
 ---
 
 <!doctype html>
@@ -57,7 +58,7 @@ const tabs = ["All", "Images", "News", "Videos", "Maps", "More"];
 
           <p data-stats class="mb-5 text-[13px] font-light text-[#8a837a] dark:text-[#6e6760]"></p>
 
-          <div class="mb-5 animate-result-slide r0 rounded-xl border-[1.5px] border-l-[3px] border-black/[0.09] border-l-[var(--accent)] bg-white/70 p-5 backdrop-blur-sm dark:border-white/[0.08] dark:bg-[#1e1c18]/70">
+          <!-- <div class="mb-5 animate-result-slide r0 rounded-xl border-[1.5px] border-l-[3px] border-black/[0.09] border-l-[var(--accent)] bg-white/70 p-5 backdrop-blur-sm dark:border-white/[0.08] dark:bg-[#1e1c18]/70">
             <div class="mb-2.5 flex items-center gap-2">
               <span class="font-sora text-[13px] font-semibold tracking-normal text-[var(--accent)]">AI Overview</span>
               <span class="ml-auto text-[11px] italic text-[#8a837a] dark:text-[#6e6760]">Quickly AI</span>
@@ -65,15 +66,11 @@ const tabs = ["All", "Images", "News", "Videos", "Maps", "More"];
             <p data-ai-short class="text-[13.5px] font-light leading-relaxed text-[#4a4540] dark:text-[#b8b0a5]"><span data-ai-query></span> is a multifaceted topic with roots in numerous academic and practical disciplines. It encompasses a broad range of concepts...</p>
             <p data-ai-full class="hidden text-[13.5px] font-light leading-relaxed text-[#4a4540] dark:text-[#b8b0a5]"></p>
             <button data-ai-toggle class="mt-1.5 text-[13px] font-medium text-[var(--accent)] transition-opacity hover:opacity-70">Show more</button>
-          </div>
+          </div> -->
 
           <div data-results-list></div>
 
-          <div class="mt-10 flex flex-wrap items-center justify-center gap-1.5">
-            <button class="rounded-lg border-[1.5px] border-black/[0.09] px-4 py-2 font-dm text-[13px] text-[#4a4540] opacity-35 dark:border-white/[0.08] dark:text-[#b8b0a5]">Prev</button>
-            {[1,2,3,4,5,6,7,8].map((page) => <button class={`h-9 w-9 rounded-lg border-[1.5px] font-dm text-[13px] transition-all duration-150 ${page === 1 ? "border-[var(--accent)] bg-[var(--accent)] font-semibold text-white" : "border-black/[0.09] text-[#4a4540] hover:border-black/20 dark:border-white/[0.08] dark:text-[#b8b0a5] dark:hover:border-white/20"}`}>{page}</button>)}
-            <button class="rounded-lg border-[1.5px] border-black/[0.09] px-4 py-2 font-dm text-[13px] text-[#4a4540] transition-colors duration-150 hover:border-black/20 dark:border-white/[0.08] dark:text-[#b8b0a5] dark:hover:border-white/20">Next</button>
-          </div>
+          <div data-pagination class="mt-10 flex flex-wrap items-center justify-center gap-1.5"></div>
 
           <div class="mt-8 border-t border-black/[0.07] pt-5 dark:border-white/[0.06]">
             <h4 class="mb-3.5 text-[11px] font-semibold uppercase tracking-widest text-[#8a837a] dark:text-[#6e6760]">Related searches</h4>
@@ -112,6 +109,11 @@ const tabs = ["All", "Images", "News", "Videos", "Maps", "More"];
         </div>
       </footer>
     </div>
-    <script is:inline src="/quickly.js"></script>
+    <script define:vars={{ apiUrl }}>
+      window.QUICKLY_API_URL = apiUrl;
+    </script>
+    <script>
+      import "../scripts/quickly.js";
+    </script>
   </body>
 </html>

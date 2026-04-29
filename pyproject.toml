@@ -10,13 +10,7 @@ dependencies = ["api"]
 api = { workspace = true }
 
 [tool.uv.workspace]
-members = [
-  "apps/api",
-  "apps/index",
-  "apps/spider",
-  "packages/tkz",
-  "packages/db",
-]
+members = ["apps/api", "apps/index", "apps/spider", "packages/tkz", "packages/db"]
 
 [project.scripts]
 app = "apps.api.main:app"

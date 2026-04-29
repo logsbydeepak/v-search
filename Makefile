@@ -1,4 +1,5 @@
 format:
+	bunx oxfmt .
 	uv format
 
 api:
